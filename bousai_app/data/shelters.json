@@ -18,5 +18,47 @@
   {
     "id": 7,
     "name": "お"
+  },
+  {
+    "id": 8,
+    "name": "青森市立中央小学校",
+    "address": "青森県青森市本町2丁目3-12",
+    "capacity": "250人",
+    "pet": false,
+    "barrier_free": true,
+    "preschool": true,
+    "hazards": [
+      "洪水・内水氾濫",
+      "崖崩れ・地滑り",
+      "土石流"
+    ]
+  },
+  {
+    "id": 9,
+    "name": "青森市立浦町中学校",
+    "address": "青森県青森市浦町4丁目9-5",
+    "capacity": "180人",
+    "pet": true,
+    "barrier_free": false,
+    "preschool": true,
+    "hazards": [
+      "津波・高潮",
+      "洪水・内水氾濫",
+      "大規模な火事"
+    ]
+  },
+  {
+    "id": 10,
+    "name": "青森市立橋本小学校",
+    "address": "青森県青森市橋本1丁目8-17",
+    "capacity": "220人",
+    "pet": true,
+    "barrier_free": true,
+    "preschool": false,
+    "hazards": [
+      "洪水・内水氾濫",
+      "土石流",
+      "大規模な火事"
+    ]
   }
 ]

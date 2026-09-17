@@ -157,6 +157,13 @@ def filter_shelters(district=None, query=None, facilities=None, hazards=None):
     hazards = hazards or []
 
     def has_option(shelter, option):
+        hazard_aliases = {
+            '津波・高潮': ('tsunami', 'storm_surge', '津波・高潮'),
+            '洪水・内水氾濫': ('flood', '洪水・内水氾濫', '洪水'),
+            '崖崩れ・地滑り': ('landslide', 'landslide_safe', '崖崩れ・地滑り', '土砂崩れ'),
+            '土石流': ('debris_flow', 'debrisFlow', '土石流'),
+            '大規模な火事': ('large_fire', 'largeFire', '大規模な火事')
+        }
         aliases = {
             'pet': ('pet', 'pet_allowed', 'pets_allowed', 'ペット可'),
             'barrier_free': ('barrier_free', 'barrierFree', 'バリアフリー'),
@@ -168,7 +175,11 @@ def filter_shelters(district=None, query=None, facilities=None, hazards=None):
             'flood': ('flood', 'flood_safe', '洪水'),
             'landslide': ('landslide', 'landslide_safe', '土砂崩れ')
         }
-        values = [shelter.get(key) for key in aliases[option] if key in shelter]
+        option_aliases = hazard_aliases.get(option, aliases.get(option, (option,)))
+        values = [shelter.get(key) for key in option_aliases if key in shelter]
+        hazards_value = shelter.get('hazards', [])
+        if isinstance(hazards_value, list) and option in hazards_value:
+            return True
         for value in values:
             if isinstance(value, list) and option in value:
                 return True
@@ -392,6 +403,7 @@ def shelter_register():
             'pet': request.form.get('pet') == 'on',
             'barrier_free': request.form.get('barrier_free') == 'on',
             'preschool': request.form.get('preschool') == 'on',
+            'parking': request.form.get('parking') == 'on',
             'hazards': request.form.getlist('hazard')
         })
         save_shelters()
