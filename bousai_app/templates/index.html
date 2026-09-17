@@ -4,192 +4,142 @@
 
 {% block content %}
 <style>
-    :root {
-        --blue: #2f5eb5;
-        --green: #22a34a;
-        --text: #42536a;
-        --panel-shadow: 0 4px 18px rgba(34, 69, 117, 0.08);
-    }
-
-    * { box-sizing: border-box; }
-
-    body.home-page {
-        margin: 0;
-        background: #fff;
-        color: var(--text);
-        font-family: "Noto Sans JP", "Yu Gothic", sans-serif;
-    }
-
-    .home-page .site-header {
-        height: 70px;
-        padding: 0 max(32px, calc((100vw - 1380px) / 2));
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        background: var(--blue);
-        color: #fff;
-    }
-
-    .home-page .site-header h1 {
-        margin: 0;
-        font-size: 28px;
-        font-weight: 700;
-        letter-spacing: 0;
-    }
-
-    .home-page .menu-button {
-        border: 0;
-        padding: 0;
-        background: transparent;
-        color: #fff;
-        font-size: 28px;
-        line-height: 1;
-        cursor: pointer;
-    }
-
-    .home-page .site-nav { display: none; }
-    .home-page > hr { display: none; }
-    .home-page main { padding: 32px 20px 86px; }
-
-    .home-content {
-        width: min(920px, 100%);
-        margin: 0 auto;
-    }
-
-    .home-panel {
-        padding: 28px;
-        margin-bottom: 36px;
-        border-radius: 16px;
-        background: #fff;
-        box-shadow: var(--panel-shadow);
-    }
-
-    .home-heading {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin: 0 0 22px;
-        color: var(--blue);
-        font-size: 25px;
-        font-weight: 700;
-    }
-
-    .map-pin { font-size: 28px; }
-    #shelterMap {
-        height: 365px;
-        overflow: hidden;
-        border-radius: 11px;
-    }
-
-    .weather-heading { justify-content: space-between; }
-    .refresh-label {
-        color: var(--green);
-        font-size: 17px;
-        font-weight: 700;
-        white-space: nowrap;
-    }
-
-    .weather-body {
-        padding: 20px 18px 16px;
-        border-radius: 11px;
-        background: #f8f9fb;
-        font-size: 16px;
-    }
-
-    .weather-body p { margin: 0 0 12px; }
-    .weather-body p:last-child { margin-bottom: 0; }
-    .weather-location { font-size: 19px; font-weight: 700; }
-    .weather-clear { color: var(--green); font-size: 18px; font-weight: 700; }
-    .weather-time { color: #52657b; }
-    .weather-time span { color: #42536a; }
-    .weather-icon { margin-right: 7px; }
-
-    @media (max-width: 680px) {
-        .home-page .site-header { height: 62px; padding: 0 20px; }
-        .home-page .site-header h1 { font-size: 23px; }
-        .home-page main { padding: 20px 12px 48px; }
-        .home-panel { padding: 18px; margin-bottom: 20px; border-radius: 12px; }
-        .home-heading { font-size: 20px; margin-bottom: 16px; }
-        .refresh-label { font-size: 13px; }
-        #shelterMap { height: 280px; }
+    :root { --home-blue: #1f4f89; --home-red: #c33d3d; --home-green: #1f7a62; --home-text: #26384a; }
+    .home-page { background: #f4f7fa; color: var(--home-text); font-family: "Noto Sans JP", "Yu Gothic", sans-serif; }
+    .home-page .site-header { height: 70px; padding: 0 max(24px, calc((100vw - 1280px) / 2)); background: var(--home-blue); color: #fff; }
+    .home-page .site-header h1 { margin: 0; font-size: 28px; }
+    .home-page .menu-button { border: 0; background: transparent; color: #fff; font-size: 28px; }
+    .home-page .site-nav:not(.is-open), .home-page > hr { display: none; }
+    .home-page main { padding: 24px 20px 48px; }
+    .home-content { width: min(1180px, 100%); margin: 0 auto; }
+    .disaster-board, .home-panel { background: #fff; border-radius: 10px; box-shadow: 0 4px 18px rgba(34, 69, 117, .08); }
+    .disaster-board { min-height: 230px; padding: 24px 28px; border: 3px solid var(--home-red); }
+    .home-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 18px; color: var(--home-blue); font-size: 24px; }
+    .disaster-heading { color: var(--home-red); }
+    .heading-icon { margin-right: 8px; }
+    .detail-button, .search-button, .fullscreen-button { border: 0; border-radius: 6px; padding: 10px 14px; color: #fff; font-weight: 700; cursor: pointer; }
+    .detail-button { background: var(--home-red); }
+    .search-button { background: var(--home-blue); }
+    .fullscreen-button { background: var(--home-green); white-space: nowrap; }
+    .detail-button:hover, .search-button:hover, .fullscreen-button:hover { filter: brightness(.9); }
+    .status-message { margin: 0; padding: 18px; border-radius: 7px; background: #f8f9fb; }
+    .status-message.empty { color: var(--home-green); font-weight: 700; }
+    .warning-list, .notice-list { margin: 0; padding-left: 24px; }
+    .warning-list li, .notice-list li { margin: 8px 0; }
+    .warning-list .landslide-warning { color: var(--home-red); font-weight: 700; }
+    .update-time { margin: 16px 0 0; color: #607286; font-size: 14px; }
+    .home-lower { display: grid; grid-template-columns: minmax(280px, .85fr) minmax(0, 1.15fr); gap: 24px; margin-top: 24px; align-items: stretch; }
+    .home-panel { padding: 24px; }
+    .region-form { display: flex; gap: 10px; margin-bottom: 18px; }
+    .region-form input { min-width: 0; flex: 1; padding: 11px; border: 1px solid #b9c8d6; border-radius: 6px; font-size: 16px; }
+    .region-hint { margin: 0 0 16px; color: #607286; font-size: 14px; }
+    .map-panel { min-width: 0; }
+    .map-heading { margin-bottom: 12px; }
+    #homeMap { height: 460px; overflow: hidden; border-radius: 8px; }
+    .map-error { margin: 8px 0 0; color: var(--home-red); font-size: 14px; }
+    .map-legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 12px 0 0; color: #52657b; font-size: 14px; }
+    .legend-item { display: inline-flex; align-items: center; gap: 6px; }
+    .legend-color { display: inline-block; width: 13px; height: 13px; border-radius: 50%; }
+    .legend-danger { background: #d64545; } .legend-shelter { background: #287bc0; }
+    .map-credit { flex-basis: 100%; }
+    .map-panel.is-fullscreen { position: fixed; z-index: 1000; inset: 0; padding: 18px; border-radius: 0; background: #fff; }
+    .map-panel.is-fullscreen #homeMap { height: calc(100vh - 125px); }
+    body.map-open { overflow: hidden; }
+    @media (max-width: 760px) {
+        .home-page .site-header { height: 62px; padding: 0 16px; }
+        .home-page .site-header h1 { font-size: 22px; }
+        .home-page main { padding: 14px 12px 32px; }
+        .disaster-board, .home-panel { padding: 18px; }
+        .home-heading { align-items: flex-start; font-size: 20px; }
+        .home-lower { grid-template-columns: 1fr; }
+        .region-form { flex-wrap: wrap; }
+        .region-form input { flex-basis: 100%; }
+        .search-button { flex: 1; }
+        #homeMap { height: 360px; }
+        .map-panel.is-fullscreen { padding: 12px; }
+        .map-panel.is-fullscreen #homeMap { height: calc(100dvh - 120px); }
     }
 </style>
 
 <div class="home-content">
-    <section class="home-panel">
-        <h2 class="home-heading"><span class="map-pin">📍</span>避難所マップ</h2>
-        <div id="shelterMap"></div>
+    <section id="disasterBoard" class="disaster-board" aria-labelledby="disasterHeading">
+        <h2 id="disasterHeading" class="home-heading disaster-heading"><span><span class="heading-icon">⚠</span>災害情報</span><button id="detailButton" class="detail-button" type="button">詳細を見る</button></h2>
+        <div id="disasterContent" aria-live="polite"><p class="status-message">読み込み中...</p></div>
+        <p id="homeUpdateTime" class="update-time"></p>
     </section>
-
-    <section class="home-panel">
-        <h2 class="home-heading weather-heading">
-            <span><span class="weather-icon">🌤️</span>青森市 気象警報・注意報</span>
-            <span class="refresh-label">⟳ 10分おき自動更新</span>
-        </h2>
-        <div id="weatherContent" class="weather-body">
-            <p>読み込み中...</p>
-        </div>
-    </section>
+    <div class="home-lower">
+        <section class="home-panel" aria-labelledby="regionHeading">
+            <h2 id="regionHeading" class="home-heading">地域別情報</h2>
+            <form id="regionForm" class="region-form">
+                <input id="regionInput" name="region" list="districtOptions" placeholder="町名・地区名を入力" aria-label="町名・地区名">
+                <datalist id="districtOptions">{% for district in districts %}<option value="{{ district }}">{% endfor %}</datalist>
+                <button class="search-button" type="submit">検索</button>
+            </form>
+            <p id="regionHint" class="region-hint">青森市内の町名・地区名を検索できます。</p>
+            <div id="regionContent" aria-live="polite"><p class="status-message">地域情報を読み込み中...</p></div>
+        </section>
+        <section id="mapPanel" class="home-panel map-panel" aria-labelledby="mapHeading">
+            <h2 id="mapHeading" class="home-heading map-heading"><span>土砂災害・通行注意マップ</span><button id="fullscreenButton" class="fullscreen-button" type="button">全画面で見る</button></h2>
+            <div id="homeMap" aria-label="青森市の防災マップ"></div>
+            <p id="mapError" class="map-error" hidden>地図を読み込めませんでした。時間をおいて再度お試しください。</p>
+            <div class="map-legend"><span class="legend-item"><i class="legend-color legend-danger"></i>土砂災害系の発表地域</span><span class="legend-item"><i class="legend-color legend-shelter"></i>避難所</span><span class="map-credit">地図: © OpenStreetMap contributors</span></div>
+        </section>
+    </div>
 </div>
 
-<!-- Leaflet の読み込み -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // 地図の初期化（青森市周辺を中心に設定）
-    const map = L.map('shelterMap').setView([40.8246, 140.7400], 12);
-
-    // OpenStreetMapタイルを追加
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        referrerPolicy: 'strict-origin-when-cross-origin'
-    }).addTo(map);
-
-    // 気象警報・注意報の自動更新機能
-    function updateWeatherWarnings() {
-        fetch('/api/weather_warnings')
-            .then(response => response.json())
-            .then(data => {
-                console.log('気象情報を更新しました:', data);
-                updateWeatherContent(data);
-            })
-            .catch(error => {
-                console.error('気象情報の更新に失敗しました:', error);
-            });
+document.addEventListener('DOMContentLoaded', function () {
+    const cityCenter = [40.8244, 140.7400];
+    const map = L.map('homeMap').setView(cityCenter, 8);
+    const dangerLayer = L.layerGroup().addTo(map);
+    const shelterLayer = L.layerGroup().addTo(map);
+    const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors', referrerPolicy: 'strict-origin-when-cross-origin' }).addTo(map);
+    tileLayer.on('tileerror', function () { document.getElementById('mapError').hidden = false; });
+    const disasterContent = document.getElementById('disasterContent');
+    const regionContent = document.getElementById('regionContent');
+    const regionHint = document.getElementById('regionHint');
+    const updateTime = document.getElementById('homeUpdateTime');
+    const mapPanel = document.getElementById('mapPanel');
+    const fullscreenButton = document.getElementById('fullscreenButton');
+    function createText(tag, text, className) { const element = document.createElement(tag); element.textContent = text; if (className) element.className = className; return element; }
+    function renderWeather(container, weather) {
+        container.replaceChildren();
+        if (weather.error) { container.appendChild(createText('p', '気象情報を取得できませんでした。', 'status-message')); return; }
+        if (!weather.warnings || weather.warnings.length === 0) { container.appendChild(createText('p', '現在、青森市で発表中の警報・注意報はありません。', 'status-message empty')); return; }
+        const list = document.createElement('ul'); list.className = 'warning-list';
+        weather.warnings.forEach(function (warning) { const item = createText('li', warning.name + '（' + warning.status + '）'); if ((warning.name || '').includes('土砂')) item.className = 'landslide-warning'; list.appendChild(item); });
+        container.appendChild(list);
     }
-
-    function updateWeatherContent(data) {
-        const weatherContent = document.getElementById('weatherContent');
-
-        if (data.error) {
-            weatherContent.innerHTML = '<p class="weather-clear">気象情報の取得に失敗しました</p>';
-            return;
-        }
-
-        let warningsHtml = '';
-        if (data.warnings && data.warnings.length > 0) {
-            warningsHtml = '<ul class="weather-clear">';
-            data.warnings.forEach(warning => {
-                warningsHtml += `<li>${warning.name}（${warning.status}）</li>`;
-            });
-            warningsHtml += '</ul>';
-        } else {
-            warningsHtml = '<p class="weather-clear"><span class="weather-icon">●</span>現在、警報・注意報は発表されていません</p>';
-        }
-
-        weatherContent.innerHTML = `
-            <p class="weather-location"><span class="weather-icon">📍</span>青森市</p>
-            ${warningsHtml}
-            <p class="weather-time"><span class="weather-icon">◷</span>データ取得: <span id="lastFetchTime">${data.last_fetch_time || '更新中...'}</span></p>
-            <p class="weather-time"><span class="weather-icon">◔</span>気象庁発表: ${data.report_time || '不明'}</p>
-        `;
+    function renderNotices(container, notices) {
+        if (!notices.length) return;
+        const heading = createText('h3', '住民向けのお知らせ'); heading.style.fontSize = '18px'; container.appendChild(heading);
+        const list = document.createElement('ul'); list.className = 'notice-list';
+        notices.forEach(function (notice) { const item = document.createElement('li'); item.appendChild(createText('strong', notice.content || '防災通知')); const time = notice.updated_at || notice.created_at; if (time) item.appendChild(createText('small', '（更新: ' + time + '）')); list.appendChild(item); });
+        container.appendChild(list);
     }
-
-    // 初回表示＋10分（600,000ミリ秒）おきに自動更新
-    updateWeatherWarnings();
-    setInterval(updateWeatherWarnings, 600000);
+    function renderRegion(data) { regionContent.replaceChildren(); regionHint.textContent = data.invalid_region ? '青森市内の町名を入力してください。' : '青森市全体の警報・注意報を表示しています。'; renderWeather(regionContent, data.weather); }
+    function renderDangerArea(weather) {
+        dangerLayer.clearLayers();
+        const dangerWarnings = (weather.warnings || []).filter(function (warning) { return (warning.name || '').includes('土砂') || ['09', '29', '39', '49'].includes(warning.code); });
+        if (!dangerWarnings.length) return;
+        const message = dangerWarnings.map(function (warning) { return warning.name; }).join('、');
+        L.circle(cityCenter, { radius: 5500, color: '#c33d3d', fillColor: '#d64545', fillOpacity: .28, weight: 2 }).bindPopup('青森市周辺: ' + message).addTo(dangerLayer);
+    }
+    function renderShelters() {
+        shelterLayer.clearLayers();
+        const shelterData = {{ shelters|tojson }};
+        shelterData.forEach(function (shelter) { if (typeof shelter.latitude !== 'number' || typeof shelter.longitude !== 'number') return; L.circleMarker([shelter.latitude, shelter.longitude], { radius: 7, color: '#287bc0', fillColor: '#287bc0', fillOpacity: .9 }).bindPopup(shelter.name || '避難所').addTo(shelterLayer); });
+    }
+    function loadHomeData(region) {
+        fetch('/api/home_data?region=' + encodeURIComponent(region || '青森市')).then(function (response) { if (!response.ok) throw new Error('home data error'); return response.json(); }).then(function (data) { disasterContent.replaceChildren(); renderWeather(disasterContent, data.weather); renderNotices(disasterContent, data.notices || []); renderRegion(data); renderDangerArea(data.weather); updateTime.textContent = '最終更新: ' + (data.updated_at || '不明'); }).catch(function () { if (!disasterContent.children.length) disasterContent.appendChild(createText('p', '情報を取得できませんでした。', 'status-message')); regionHint.textContent = '地域情報の取得に失敗しました。'; });
+    }
+    document.getElementById('detailButton').addEventListener('click', function () { document.getElementById('disasterBoard').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+    document.getElementById('regionForm').addEventListener('submit', function (event) { event.preventDefault(); loadHomeData(document.getElementById('regionInput').value.trim() || '青森市'); });
+    fullscreenButton.addEventListener('click', function () { const isOpen = mapPanel.classList.toggle('is-fullscreen'); document.body.classList.toggle('map-open', isOpen); fullscreenButton.textContent = isOpen ? '閉じる' : '全画面で見る'; if (isOpen) mapPanel.scrollIntoView({ block: 'start' }); setTimeout(function () { map.invalidateSize(); }, 50); });
+    document.addEventListener('keydown', function (event) { if (event.key === 'Escape' && mapPanel.classList.contains('is-fullscreen')) fullscreenButton.click(); });
+    renderShelters(); loadHomeData('青森市'); setInterval(function () { loadHomeData(document.getElementById('regionInput').value.trim() || '青森市'); }, 600000);
 });
 </script>
 {% endblock %}

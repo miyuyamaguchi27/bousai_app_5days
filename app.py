@@ -31,6 +31,13 @@ AREA_NAME = "青森市"
 # 気象庁の市町村コード（青森市）
 AREA_CODE = "0220100"
 
+AOMORI_DISTRICTS = [
+    "新町", "本町", "安方", "長島", "古川", "堤町", "浜田", "大野", "金沢",
+    "浪館", "三内", "新城", "石江", "沖館", "富田", "西滝", "千刈", "油川",
+    "奥内", "後潟", "野内", "原別", "矢田前", "小柳", "造道", "佃", "松森",
+    "筒井", "幸畑", "横内", "荒川", "雲谷", "戸山", "浅虫", "浪岡"
+]
+
 WARNING_URL = (
     f"https://www.jma.go.jp/bosai/warning/data/r8/{PREFECTURE_CODE}.json"
 )
@@ -144,9 +151,43 @@ def format_report_time(iso_str):
         return iso_str
 
 
-def filter_shelters(district=None):
-    """district 指定があれば一致する避難所のみ、なければ全件を返す"""
-    return [s for s in shelters if not district or s.get('district') == district]
+def filter_shelters(district=None, query=None, facilities=None, hazards=None):
+    """指定された地区・キーワード・設備・災害種別で避難所を絞り込む"""
+    facilities = facilities or []
+    hazards = hazards or []
+
+    def has_option(shelter, option):
+        aliases = {
+            'pet': ('pet', 'pet_allowed', 'pets_allowed', 'ペット可'),
+            'barrier_free': ('barrier_free', 'barrierFree', 'バリアフリー'),
+            'preschool': ('preschool', 'preschool_children', '未就学児'),
+            'parking': ('parking', 'parking_available', '駐車場'),
+            'elderly': ('elderly', 'elderly_consideration', '高齢者', '高齢者への配慮'),
+            'disability': ('disability', 'disability_consideration', '障害者', '障害のある方への配慮'),
+            'earthquake': ('earthquake', 'earthquake_safe', '地震'),
+            'flood': ('flood', 'flood_safe', '洪水'),
+            'landslide': ('landslide', 'landslide_safe', '土砂崩れ')
+        }
+        values = [shelter.get(key) for key in aliases[option] if key in shelter]
+        for value in values:
+            if isinstance(value, list) and option in value:
+                return True
+            if value is True or value == 'true' or value == '可' or value == 'あり':
+                return True
+        return False
+
+    results = []
+    normalized_query = (query or '').strip().lower()
+    for shelter in shelters:
+        searchable_text = ' '.join(str(value) for value in shelter.values()).lower()
+        if district and shelter.get('district') != district:
+            continue
+        if normalized_query and normalized_query not in searchable_text:
+            continue
+        if any(not has_option(shelter, option) for option in facilities + hazards):
+            continue
+        results.append(shelter)
+    return results
 
 
 def parse_area_warnings(warning_data):
@@ -238,11 +279,46 @@ def get_weather_warnings():
         }
 
 
+def get_active_resident_notices():
+    """住民向けの未解除通知だけを返す"""
+    return [
+        notice for notice in instructions
+        if notice.get('target') == '住民'
+        and notice.get('status') not in ('解除', '完了')
+    ]
+
+
+def get_home_data(region='青森市'):
+    """ホーム画面で使う警報・通知・地域情報をまとめて返す"""
+    try:
+        weather = get_weather_warnings()
+    except Exception:
+        weather = {
+            'area_name': AREA_NAME,
+            'warnings': [],
+            'report_time': '取得失敗',
+            'last_fetch_time': get_japan_time(),
+            'error': True
+        }
+    valid_region = region == '青森市' or region in AOMORI_DISTRICTS
+    return {
+        'weather': weather,
+        'notices': get_active_resident_notices(),
+        'region': region if valid_region else '青森市',
+        'region_is_fallback': region not in ('青森市',) and valid_region,
+        'invalid_region': not valid_region,
+        'districts': ['青森市'] + AOMORI_DISTRICTS,
+        'updated_at': get_japan_time()
+    }
+
 # トップページ：templates/index.html を返す（住民向け指示も表示する）
 @app.route('/')
 def index():
-    resident_notices = [i for i in instructions if i.get('target') == '住民']
-    return render_template('index.html', resident_notices=resident_notices)
+    return render_template(
+        'index.html',
+        districts=['青森市'] + AOMORI_DISTRICTS,
+        shelters=shelters
+    )
 
 # ログインページ
 @app.route('/login', methods=['GET', 'POST'])
@@ -288,15 +364,36 @@ def logout():
 def shelter_register():
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
+        address = request.form.get('address', '').strip()
+        capacity = request.form.get('capacity', '').strip()
+        form_data = request.form
+        missing_fields = []
         if not name:
+            missing_fields.append('避難所名')
+        if not address:
+            missing_fields.append('住所')
+        if not capacity:
+            missing_fields.append('収容数')
+
+        if missing_fields:
             return render_template(
                 'shelter_register.html',
                 error=True,
-                message='避難所名を入力してください。'
+                message='次の項目を入力してください: ' + '、'.join(missing_fields),
+                form_data=form_data
             )
 
         next_id = max((shelter.get('id', 0) for shelter in shelters), default=0) + 1
-        shelters.append({'id': next_id, 'name': name})
+        shelters.append({
+            'id': next_id,
+            'name': name,
+            'address': address,
+            'capacity': capacity,
+            'pet': request.form.get('pet') == 'on',
+            'barrier_free': request.form.get('barrier_free') == 'on',
+            'preschool': request.form.get('preschool') == 'on',
+            'hazards': request.form.getlist('hazard')
+        })
         save_shelters()
         return render_template(
             'shelter_register.html',
@@ -317,18 +414,65 @@ def all_shelters():
     return render_template('search_results.html', results=shelters)
 
 
-# 指示ボード：住民向けの指示を一覧で確認する
-@app.route('/board')
-@login_required
+# 指示ボード：住民向けの発信を一覧で確認する
+@app.route('/board', methods=['GET', 'POST'])
 def board():
+    if request.method == 'POST':
+        if not session.get('logged_in'):
+            return redirect(url_for('login', next=request.url))
+
+        content = request.form.get('content', '').strip()
+        shelter = request.form.get('shelter', '').strip()
+        hazard = request.form.get('hazard', '').strip()
+        if not content or not shelter or not hazard or hazard not in WARNING_CODES.values():
+            resident_instructions = [i for i in instructions if i.get('target') == '住民']
+            return render_template(
+                'board.html',
+                instructions=resident_instructions,
+                error=True,
+                message='すべての項目を入力してください。',
+                form_data=request.form,
+                hazard_options=list(WARNING_CODES.values())
+            )
+
+        now = get_japan_time()
+        next_id = max((instruction.get('id', 0) for instruction in instructions), default=0) + 1
+        instructions.append({
+            'id': next_id,
+            'target': '住民',
+            'content': content,
+            'shelter': shelter,
+            'hazard': hazard,
+            'status': '発信中',
+            'created_at': now,
+            'updated_at': now
+        })
+        save_instructions()
+        return redirect(url_for('board'))
+
     resident_instructions = [i for i in instructions if i.get('target') == '住民']
-    return render_template('board.html', instructions=resident_instructions)
+    return render_template(
+        'board.html',
+        instructions=resident_instructions,
+        hazard_options=list(WARNING_CODES.values())
+    )
 
 # 検索結果ページ：templates/search_results.html を返す
 @app.route('/search_results')
 def search_results():
-    results = filter_shelters(request.args.get('district'))
-    return render_template('search_results.html', results=results)
+    facilities = request.args.getlist('facility')
+    hazards = request.args.getlist('hazard')
+    results = filter_shelters(
+        district=request.args.get('district'),
+        query=request.args.get('q'),
+        facilities=facilities,
+        hazards=hazards
+    )
+    return render_template(
+        'search_results.html',
+        results=results,
+        search_params=request.args
+    )
 
 # JSON API：/shelters?district=地区名
 @app.route('/shelters', methods=['GET'])
@@ -347,6 +491,12 @@ def get_shelters():
 def api_weather_warnings():
     """気象警報・注意報をJSON形式で返すAPI"""
     return jsonify(get_weather_warnings())
+
+
+@app.route('/api/home_data')
+def api_home_data():
+    """ホーム画面の警報・通知・地域情報を返すAPI"""
+    return jsonify(get_home_data(request.args.get('region', '青森市').strip()))
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

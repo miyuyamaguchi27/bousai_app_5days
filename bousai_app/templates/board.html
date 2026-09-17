@@ -3,23 +3,120 @@
 {% block title %}指示・発信ボード - 防災アプリ{% endblock %}
 
 {% block content %}
-<h2>発信ボード</h2>
-<p>住民向けの発信を登録・確認できます。</p>
+<style>
+  .board-page { max-width: 1240px; margin: 0 auto; padding: 28px 24px 64px; color: #26384a; font-family: "Noto Sans JP", "Yu Gothic", sans-serif; }
+  .board-hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 24px; padding: 26px 30px; border-radius: 12px; background: #1f4f89; color: #fff; box-shadow: 0 8px 24px rgba(31, 79, 137, .18); }
+  .board-hero h2 { margin: 0 0 8px; font-size: 30px; letter-spacing: .02em; }
+  .board-hero p { margin: 0; color: #dceafb; }
+  .hero-count { min-width: 120px; padding-left: 22px; border-left: 1px solid rgba(255,255,255,.35); text-align: center; }
+  .hero-count strong { display: block; font-size: 30px; line-height: 1.1; }
+  .hero-count span { font-size: 13px; color: #dceafb; }
+  .board-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, .82fr); gap: 24px; align-items: start; }
+  .board-left { display: grid; gap: 20px; }
+  .board-panel { padding: 24px; border: 1px solid #d6e1ea; border-radius: 10px; background: #fff; box-shadow: 0 4px 16px rgba(34, 69, 117, .07); }
+  .panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+  .panel-heading h3 { margin: 0; color: #1f4f89; font-size: 21px; }
+  .panel-heading small { color: #718295; }
+  .board-form label { display: block; margin-bottom: 16px; color: #34495e; font-weight: 700; }
+  .board-form input { display: block; width: 100%; margin-top: 7px; padding: 12px 13px; border: 1px solid #b9c8d6; border-radius: 6px; background: #fbfcfd; color: #26384a; font: inherit; font-weight: 400; }
+  .board-form input:focus { outline: 3px solid #d9e9f8; border-color: #1f4f89; }
+  .board-form button, .login-link { display: inline-flex; justify-content: center; width: 100%; margin-top: 2px; padding: 13px 18px; border: 0; border-radius: 6px; background: #1f7a62; color: #fff; font-size: 16px; font-weight: 700; text-decoration: none; cursor: pointer; }
+  .board-form button:hover, .login-link:hover { background: #17634f; }
+  .form-error { margin: 0 0 16px; padding: 12px 14px; border-left: 4px solid #c33d3d; border-radius: 5px; background: #fff3f3; color: #a52c2c; }
+  .notice-list { display: grid; gap: 12px; }
+  .notice-card { position: relative; padding: 17px 18px 15px; border: 1px solid #d6e1ea; border-radius: 8px; background: #fbfcfd; }
+  .notice-card::before { position: absolute; top: 0; left: 0; bottom: 0; width: 4px; border-radius: 8px 0 0 8px; background: #e4a72c; content: ""; }
+  .notice-card h4 { margin: 0 0 13px 10px; color: #26384a; font-size: 18px; line-height: 1.5; }
+  .notice-details { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin-left: 10px; }
+  .notice-detail { margin: 0; color: #52657b; font-size: 14px; }
+  .notice-detail strong { display: block; margin-bottom: 2px; color: #8795a3; font-size: 11px; letter-spacing: .04em; }
+  .notice-meta { margin: 14px 0 0 10px; padding-top: 10px; border-top: 1px solid #e5ebf0; color: #8795a3; font-size: 12px; }
+  .empty-notices { margin: 0; padding: 34px 12px; color: #718295; text-align: center; }
+  .map-panel { position: sticky; top: 20px; padding: 0; overflow: hidden; }
+  .map-caption { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid #e0e7ed; }
+  .map-caption h3 { margin: 0; color: #1f4f89; font-size: 19px; }
+  .map-caption span { color: #718295; font-size: 12px; }
+  #boardMap { height: 520px; }
+  .map-footnote { margin: 0; padding: 10px 20px 14px; color: #8795a3; font-size: 12px; }
+  @media (max-width: 820px) { .board-page { padding: 20px 14px 48px; } .board-hero { align-items: flex-start; padding: 22px; } .board-hero h2 { font-size: 25px; } .hero-count { min-width: 90px; padding-left: 14px; } .board-layout { grid-template-columns: 1fr; } .map-panel { position: static; } #boardMap { height: 360px; } }
+  @media (max-width: 520px) { .board-hero { display: block; } .hero-count { margin-top: 18px; padding: 12px 0 0; border-top: 1px solid rgba(255,255,255,.35); border-left: 0; text-align: left; } .hero-count strong, .hero-count span { display: inline; margin-right: 6px; } .board-panel { padding: 18px; } .notice-details { grid-template-columns: 1fr; } }
+</style>
 
-<!-- 発信一覧 -->
-<h3>発信一覧</h3>
-{% if instructions %}
-<table border="1" cellpadding="5">
-  <tr>
-    <th>内容</th>
-  </tr>
-  {% for inst in instructions %}
-  <tr>
-    <td>{{ inst.content }}{% if inst.shelter %}（避難先: {{ inst.shelter }}）{% endif %}</td>
-  </tr>
-  {% endfor %}
-</table>
-{% else %}
-<p>登録されている指示はありません。</p>
-{% endif %}
+<div class="board-page">
+  <header class="board-hero">
+    <div>
+      <h2>指示・発信ボード</h2>
+      <p>住民向けの発信を登録・確認できます。</p>
+    </div>
+    <div class="hero-count"><strong>{{ instructions|length }}</strong><span>登録中の発信</span></div>
+  </header>
+
+  <div class="board-layout">
+    <div class="board-left">
+      {% if session.logged_in %}
+      <section class="board-panel" aria-labelledby="registerHeading">
+        <div class="panel-heading"><h3 id="registerHeading">発信登録</h3><small>住民向け</small></div>
+        {% if error %}<p class="form-error" role="alert">{{ message }}</p>{% endif %}
+        <form class="board-form" method="post">
+          <label for="content">見出し
+            <input id="content" name="content" type="text" value="{{ form_data.get('content', '') if form_data else '' }}" required>
+          </label>
+          <label for="shelter">避難先
+            <input id="shelter" name="shelter" type="text" value="{{ form_data.get('shelter', '') if form_data else '' }}" required>
+          </label>
+          <label for="hazard">災害の種類
+            <input id="hazard" name="hazard" type="text" list="hazardOptions" value="{{ form_data.get('hazard', '') if form_data else '' }}" required>
+            <datalist id="hazardOptions">{% for option in hazard_options %}<option value="{{ option }}">{% endfor %}</datalist>
+          </label>
+          <button type="submit">発信を登録</button>
+        </form>
+      </section>
+      {% else %}
+      <section class="board-panel">
+        <div class="panel-heading"><h3>発信登録</h3><small>管理者向け</small></div>
+        <p>発信を登録するにはログインしてください。</p>
+        <a class="login-link" href="{{ url_for('login', next=request.url) }}">ログイン画面へ</a>
+      </section>
+      {% endif %}
+
+      <section class="board-panel" aria-labelledby="noticeHeading">
+        <div class="panel-heading"><h3 id="noticeHeading">発信一覧</h3><small>新しい順</small></div>
+        {% if instructions %}
+        <div class="notice-list">
+          {% for inst in instructions|reverse %}
+          <article class="notice-card">
+            <h4>{{ inst.content }}</h4>
+            <div class="notice-details">
+              <p class="notice-detail"><strong>災害の種類</strong>{{ inst.hazard or '未設定' }}</p>
+              <p class="notice-detail"><strong>避難先</strong>{{ inst.shelter }}</p>
+            </div>
+            <p class="notice-meta">更新日時: {{ inst.updated_at or inst.created_at or '不明' }}</p>
+          </article>
+          {% endfor %}
+        </div>
+        {% else %}<p class="empty-notices">登録されている発信はありません。</p>{% endif %}
+      </section>
+    </div>
+
+    <section class="board-panel map-panel" aria-label="現在位置周辺の地図">
+      <div class="map-caption"><h3>周辺マップ</h3><span>現在地を表示</span></div>
+      <div id="boardMap"></div>
+      <p class="map-footnote">地図: © OpenStreetMap contributors</p>
+    </section>
+  </div>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const fallback = [40.8244, 140.7400];
+  const map = L.map('boardMap').setView(fallback, 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors', referrerPolicy: 'strict-origin-when-cross-origin' }).addTo(map);
+  function addMarker(position, label) { L.marker(position).addTo(map).bindPopup(label).openPopup(); }
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(function (position) { const current = [position.coords.latitude, position.coords.longitude]; map.setView(current, 14); addMarker(current, '現在地'); }, function () { addMarker(fallback, '青森市周辺'); });
+  } else { addMarker(fallback, '青森市周辺'); }
+});
+</script>
 {% endblock %}

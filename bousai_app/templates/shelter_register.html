@@ -1,23 +1,86 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>避難所登録</h2>
-<p>新しい避難所情報を登録します。</p>
+<style>
+  .register-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+    color: #26384a;
+    font-family: "Noto Sans JP", "Yu Gothic", sans-serif;
+  }
+  .register-page h2 { margin: 0 0 8px; color: #1f4f89; font-size: 28px; }
+  .register-lead { margin: 0 0 24px; color: #5b6b7b; }
+  .register-form {
+    padding: 28px;
+    border: 1px solid #dce5ed;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 5px 18px rgba(31, 79, 137, 0.08);
+    font-size: 17px;
+  }
+  .form-message { margin: 0 0 20px; padding: 12px 14px; border-radius: 6px; }
+  .form-message.error { background: #fff1f1; color: #b12828; }
+  .form-message.success { background: #eef9f3; color: #1f7a62; }
+  .form-field { display: block; margin-bottom: 22px; }
+  .form-field span, .check-group legend { font-weight: 700; }
+  .form-field input[type="text"] { display: block; width: min(620px, 100%); margin-top: 8px; padding: 12px; border: 1px solid #b9c8d6; border-radius: 6px; font-size: 17px; }
+  .check-group { margin: 26px 0 0; padding: 0; border: 0; }
+  .check-options { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 12px; }
+  .check-options label { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; cursor: pointer; }
+  .check-options input { width: 18px; height: 18px; accent-color: #1f4f89; }
+  .register-actions { display: flex; justify-content: flex-end; margin-top: 30px; }
+  .register-button { min-width: 150px; padding: 14px 28px; border: 0; border-radius: 6px; background: #1f4f89; color: #fff; font-size: 18px; font-weight: 700; cursor: pointer; }
+  .register-button:hover { background: #173b68; }
+  @media (max-width: 600px) { .register-page { padding: 20px 12px 40px; } .register-form { padding: 18px; } .register-page h2 { font-size: 24px; } .register-actions { justify-content: stretch; } .register-button { width: 100%; } }
+</style>
 
-<!-- 成功・エラーメッセージ表示 -->
-{% if success %}
-  <p>{{ message }}</p>
-{% endif %}
+<div class="register-page">
+  <h2>避難所登録</h2>
+  <p class="register-lead">新しい避難所情報を登録します。</p>
 
-{% if error %}
-  <p>{{ message }}</p>
-{% endif %}
+  {% if success %}<p class="form-message success" role="status">{{ message }}</p>{% endif %}
+  {% if error %}<p class="form-message error" role="alert">{{ message }}</p>{% endif %}
 
-<form method="POST">
-  <p>
-    <label for="name">避難所名（必須）</label><br>
-    <input type="text" id="name" name="name">
-  </p>
-  <p><button type="submit">登録</button></p>
-</form>
+  <form class="register-form" method="POST">
+    <label class="form-field" for="name">
+      <span>避難所名（必須）</span>
+      <input type="text" id="name" name="name" value="{{ form_data.get('name', '') if form_data else '' }}" required>
+    </label>
+
+    <label class="form-field" for="address">
+      <span>住所（必須）</span>
+      <input type="text" id="address" name="address" value="{{ form_data.get('address', '') if form_data else '' }}" required>
+    </label>
+
+    <label class="form-field" for="capacity">
+      <span>収容数（必須）</span>
+      <input type="text" id="capacity" name="capacity" value="{{ form_data.get('capacity', '') if form_data else '' }}" required>
+    </label>
+
+    <fieldset class="check-group">
+      <legend>対応状況</legend>
+      <div class="check-options">
+        <label><input type="checkbox" name="pet" {% if form_data and form_data.get('pet') %}checked{% endif %}>ペット可能</label>
+        <label><input type="checkbox" name="barrier_free" {% if form_data and form_data.get('barrier_free') %}checked{% endif %}>バリアフリー対応</label>
+        <label><input type="checkbox" name="preschool" {% if form_data and form_data.get('preschool') %}checked{% endif %}>乳幼児対応</label>
+      </div>
+    </fieldset>
+
+    <fieldset class="check-group">
+      <legend>対応可能な災害</legend>
+      <div class="check-options">
+        {% set selected_hazards = form_data.getlist('hazard') if form_data else [] %}
+        <label><input type="checkbox" name="hazard" value="津波・高潮" {% if '津波・高潮' in selected_hazards %}checked{% endif %}>津波・高潮</label>
+        <label><input type="checkbox" name="hazard" value="洪水・内水氾濫" {% if '洪水・内水氾濫' in selected_hazards %}checked{% endif %}>洪水・内水氾濫</label>
+        <label><input type="checkbox" name="hazard" value="崖崩れ・地滑り" {% if '崖崩れ・地滑り' in selected_hazards %}checked{% endif %}>崖崩れ・地滑り</label>
+        <label><input type="checkbox" name="hazard" value="土石流" {% if '土石流' in selected_hazards %}checked{% endif %}>土石流</label>
+        <label><input type="checkbox" name="hazard" value="大規模な火事" {% if '大規模な火事' in selected_hazards %}checked{% endif %}>大規模な火事</label>
+      </div>
+    </fieldset>
+
+    <div class="register-actions"><button class="register-button" type="submit">避難所を登録</button></div>
+  </form>
+</div>
+
 {% endblock %}

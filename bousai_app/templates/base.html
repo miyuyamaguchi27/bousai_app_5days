@@ -4,19 +4,34 @@
   <meta charset="utf-8">
   <title>{% block title %}防災アプリ{% endblock %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #26384a; font-family: "Noto Sans JP", "Yu Gothic", sans-serif; }
+    .site-header { display: flex; align-items: center; justify-content: space-between; padding: 22px 24px 12px; }
+    .site-header h1 { margin: 0; }
+    .menu-button { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 40px; border: 1px solid #c7d5e2; border-radius: 6px; background: #fff; color: #1f4f89; font-size: 24px; line-height: 1; cursor: pointer; }
+    .site-nav { display: none; flex-wrap: wrap; align-items: center; gap: 8px; padding: 0 24px 16px; }
+    .site-nav.is-open { display: flex; }
+    .home-page .site-nav.is-open { display: flex; }
+    .site-nav a { display: inline-block; padding: 9px 14px; border: 1px solid #c7d5e2; border-radius: 6px; color: #1f4f89; text-decoration: none; font-weight: 700; }
+    .site-nav a:hover { background: #eef5fb; }
+    .site-nav a:first-child { background: #1f4f89; color: #fff; border-color: #1f4f89; }
+    body > hr { margin: 0; border: 0; border-top: 1px solid #e2e8ee; }
+    @media (max-width: 600px) { .site-header { padding: 16px 16px 10px; } .site-nav { padding: 0 16px 14px; gap: 6px; } .site-nav a { padding: 8px 10px; font-size: 14px; } }
+  </style>
 </head>
 <body class="{% block body_class %}{% endblock %}">
   <header class="site-header">
     <h1>防災アプリ</h1>
-    <button class="menu-button" type="button" aria-label="メニュー">☰</button>
+      <button class="menu-button" type="button" aria-label="メニューを開く" aria-expanded="false" aria-controls="site-navigation">☰</button>
   </header>
 
   <!-- ナビゲーション -->
-  <nav class="site-nav">
+    <nav id="site-navigation" class="site-nav">
     <a href="/">ホーム</a> |
     <a href="/shelter_search">避難所検索</a> |
     <a href="/shelter_register">避難所登録</a> |
-    <a href="/board">指示・発信ボード</a>
+    <a href="/board">指示ボード</a>
     ｜
     {% if session.logged_in %}
       ログイン中{% if session.username %}（{{ session.username }}）{% endif %}
@@ -32,5 +47,15 @@
     <!-- ここに子テンプレートの content が入る -->
     {% block content %}{% endblock %}
   </main>
+  <script>
+    const menuButton = document.querySelector('.menu-button');
+    const siteNavigation = document.getElementById('site-navigation');
+    menuButton.addEventListener('click', function () {
+      const isOpen = siteNavigation.classList.toggle('is-open');
+      menuButton.setAttribute('aria-expanded', String(isOpen));
+      menuButton.setAttribute('aria-label', isOpen ? 'メニューを閉じる' : 'メニューを開く');
+      menuButton.textContent = isOpen ? '×' : '☰';
+    });
+  </script>
 </body>
 </html>

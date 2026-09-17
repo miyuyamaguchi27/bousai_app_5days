@@ -1,8 +1,146 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>避難所検索</h2>
-<p>登録されている避難所を確認できます。</p>
+<style>
+	.search-page {
+		max-width: 1180px;
+		margin: 0 auto;
+		padding: 24px 20px 60px;
+		color: #26384a;
+		font-family: "Noto Sans JP", "Yu Gothic", sans-serif;
+	}
+	.search-page h2 { margin: 0 0 8px; color: #1f4f89; font-size: 28px; }
+	.search-lead { margin: 0 0 24px; color: #5b6b7b; }
+	.search-layout {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(360px, 1fr);
+		gap: 24px;
+		align-items: start;
+	}
+	.search-panel, .map-panel {
+		padding: 24px;
+		border: 1px solid #dce5ed;
+		border-radius: 12px;
+		background: #fff;
+		box-shadow: 0 5px 18px rgba(31, 79, 137, 0.08);
+	}
+	.map-panel h3 { margin: 0 0 12px; color: #1f4f89; font-size: 20px; }
+	#searchMap { height: 560px; overflow: hidden; border-radius: 8px; }
+	.location-button {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		border: 0;
+		border-radius: 6px;
+		padding: 12px 16px;
+		background: #1f7a62;
+		color: #fff;
+		font-weight: 700;
+		cursor: pointer;
+	}
+	.location-button:hover { background: #17634f; }
+	.location-status { display: inline-block; margin-left: 12px; color: #5b6b7b; font-size: 14px; }
+	.search-field { display: block; width: 100%; margin-top: 24px; }
+	.search-field span, .filter-group legend { font-weight: 700; }
+	.search-field input[type="search"] {
+		width: 100%; margin-top: 8px; padding: 12px;
+		border: 1px solid #b9c8d6; border-radius: 6px; font-size: 16px;
+	}
+	.search-field input[type="number"] {
+		width: 180px; margin-top: 8px; padding: 12px;
+		border: 1px solid #b9c8d6; border-radius: 6px; font-size: 16px;
+	}
+	.filter-group { margin: 24px 0 0; padding: 0; border: 0; }
+	.filter-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; margin-top: 12px; }
+	.filter-options label { display: flex; align-items: center; gap: 8px; min-height: 40px; cursor: pointer; }
+	.filter-options input { width: 18px; height: 18px; accent-color: #1f4f89; }
+	.submit-button { width: 100%; margin-top: 28px; padding: 14px; border: 0; border-radius: 6px; background: #1f4f89; color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; }
+	.submit-button:hover { background: #173b68; }
+	@media (max-width: 800px) { .search-layout { grid-template-columns: 1fr; } #searchMap { height: 360px; } }
+	@media (max-width: 600px) { .search-page { padding: 20px 12px 40px; } .search-panel, .map-panel { padding: 18px; } .filter-options { grid-template-columns: 1fr; } .location-status { display: block; margin: 10px 0 0; } }
+</style>
 
-<p><a href="/all_shelters">全施設一覧</a></p>
+<div class="search-page">
+	<h2>避難所検索</h2>
+	<p class="search-lead">現在地や必要な設備から、利用できる避難所を探せます。</p>
+
+	<div class="search-layout">
+		<form class="search-panel" method="get" action="{{ url_for('search_results') }}">
+			<button class="location-button" id="locationButton" type="button">⌖ 現在地を取得</button>
+			<span class="location-status" id="locationStatus" aria-live="polite">位置情報は検索の補助に利用します</span>
+			<input id="latitude" name="latitude" type="hidden">
+			<input id="longitude" name="longitude" type="hidden">
+
+			<label class="search-field" for="freeSearch">
+				<span>フリー検索</span>
+				<input id="freeSearch" name="q" type="search" placeholder="避難所名、住所などを入力">
+			</label>
+
+			<label class="search-field" for="people">
+				<span>避難したい人数</span>
+				<input id="people" name="people" type="number" min="1" step="1" inputmode="numeric" placeholder="人数">
+				<span>人</span>
+			</label>
+
+			<fieldset class="filter-group">
+				<legend>必要な設備</legend>
+				<div class="filter-options">
+					<label><input type="checkbox" name="facility" value="pet">ペット可</label>
+					<label><input type="checkbox" name="facility" value="barrier_free">バリアフリーあり</label>
+					<label><input type="checkbox" name="facility" value="preschool">未就学児</label>
+					<label><input type="checkbox" name="facility" value="parking">駐車場</label>
+					<label><input type="checkbox" name="facility" value="elderly">高齢者への配慮</label>
+					<label><input type="checkbox" name="facility" value="disability">障害のある方への配慮</label>
+				</div>
+			</fieldset>
+
+			<fieldset class="filter-group">
+				<legend>対応する災害</legend>
+				<div class="filter-options">
+					<label><input type="checkbox" name="hazard" value="earthquake">地震</label>
+					<label><input type="checkbox" name="hazard" value="flood">洪水</label>
+					<label><input type="checkbox" name="hazard" value="landslide">土砂崩れ</label>
+				</div>
+			</fieldset>
+
+			<button class="submit-button" type="submit">条件を指定して検索</button>
+		</form>
+
+		<section class="map-panel" aria-labelledby="mapHeading">
+			<h3 id="mapHeading">避難所マップ</h3>
+			<div id="searchMap"></div>
+		</section>
+	</div>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+	const searchMap = L.map('searchMap').setView([40.8246, 140.7400], 12);
+	L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+		attribution: '&copy; OpenStreetMap contributors',
+		referrerPolicy: 'strict-origin-when-cross-origin'
+	}).addTo(searchMap);
+
+	let currentLocationMarker;
+	document.getElementById('locationButton').addEventListener('click', function () {
+		const status = document.getElementById('locationStatus');
+		if (!navigator.geolocation) {
+			status.textContent = 'このブラウザでは位置情報を利用できません';
+			return;
+		}
+		status.textContent = '位置情報を取得しています...';
+		navigator.geolocation.getCurrentPosition(function (position) {
+			document.getElementById('latitude').value = position.coords.latitude;
+			document.getElementById('longitude').value = position.coords.longitude;
+			const currentLocation = [position.coords.latitude, position.coords.longitude];
+			searchMap.setView(currentLocation, 14);
+			if (currentLocationMarker) searchMap.removeLayer(currentLocationMarker);
+			currentLocationMarker = L.marker(currentLocation).addTo(searchMap).bindPopup('現在地').openPopup();
+			status.textContent = '現在地を取得しました。検索を実行してください';
+		}, function () {
+			status.textContent = '位置情報が許可されませんでした';
+		});
+	});
+</script>
 {% endblock %}
